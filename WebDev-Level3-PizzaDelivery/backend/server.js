@@ -20,15 +20,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Serve Frontend Static Files
-app.use(express.static(path.join(__dirname, '../frontend')));
-
-// Use API Routes
-app.use('/api', pizzaRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api', paymentRoutes);
-
-// --- FRONTEND MULTI-PAGE ROUTING ---
+// --- FRONTEND MULTI-PAGE EXPLICIT ROUTING (Static middleware se pehle honi chahiye) ---
 
 // 1. Root Route: Link khulte hi sabse pehle login.html khulna chahiye
 app.get('/', (req, res) => {
@@ -49,6 +41,14 @@ app.get('/admin', (req, res) => {
 app.get('/admin-login', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../frontend', 'admin-login.html'));
 });
+
+// Serve Frontend Static Files (CSS, JS, Images, etc.)
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+// Use API Routes
+app.use('/api', pizzaRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api', paymentRoutes);
 
 // Test Route / API Health Check
 app.get('/api/health', (req, res) => {
