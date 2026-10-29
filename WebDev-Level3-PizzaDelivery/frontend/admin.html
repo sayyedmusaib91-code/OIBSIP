@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SliceCraft | Admin Dashboard</title>
+    <style>
+        :root {
+            --primary: #ff4757;
+            --secondary: #2f3542;
+            --bg: #f1f2f6;
+            --white: #ffffff;
+            --success: #2ed573;
+            --dark: #1e272e;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg); color: var(--secondary); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Left Sidebar */
+        .sidebar {
+            width: 240px;
+            background: var(--dark);
+            color: var(--white);
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            justify-content: space-between;
+        }
+        .logo-area { display: flex; align-items: center; gap: 10px; font-size: 1.4rem; font-weight: bold; color: var(--primary); margin-bottom: 20px; }
+        .nav-links { display: flex; flex-direction: column; gap: 8px; }
+        .nav-item { padding: 10px 14px; border-radius: 8px; color: #a4b0be; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 12px; transition: 0.2s; cursor: pointer; font-size: 0.9rem; }
+        .nav-item:hover, .nav-item.active { background: var(--primary); color: var(--white); }
+        
+        .logout-sidebar-btn {
+            background: rgba(255, 71, 87, 0.15);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        .logout-sidebar-btn:hover { background: var(--primary); color: var(--white); }
+
+        /* Main Content Area */
+        .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+        /* Top Bar */
+        .topbar {
+            background: var(--white);
+            padding: 12px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #dfe4ea;
+            height: 65px;
+        }
+        .search-bar {
+            background: var(--bg);
+            padding: 8px 15px;
+            border-radius: 20px;
+            width: 380px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid #dcdde1;
+        }
+        .search-bar input { border: none; background: transparent; outline: none; width: 100%; font-size: 0.9rem; }
+        .admin-profile { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 0.9rem; }
+
+        /* Admin Body Container */
+        .admin-body { padding: 15px 25px; flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 12px; }
+
+        /* Stats Cards Row */
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .stat-card { background: var(--white); padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 4px; }
+        .stat-card h4 { font-size: 0.75rem; color: #747d8c; text-transform: uppercase; }
+        .stat-card .val { font-size: 1.4rem; font-weight: 800; color: var(--secondary); }
+        .stat-card .trend { font-size: 0.75rem; color: var(--success); font-weight: bold; }
+
+        /* Dashboard Grid Sections */
+        .dash-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 15px; flex: 1; overflow: hidden; }
+        .dash-card { background: var(--white); border-radius: 10px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; flex-direction: column; overflow: hidden; }
+        .dash-card h3 { font-size: 1rem; margin-bottom: 10px; color: var(--secondary); border-bottom: 1px solid var(--bg); padding-bottom: 6px; }
+
+        /* Tables & Lists */
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { padding: 8px 10px; border-bottom: 1px solid #f1f2f6; text-align: left; }
+        th { background-color: #f8f9fa; color: #57606f; font-weight: 600; }
+
+        .admin-view { display: none; flex: 1; flex-direction: column; gap: 12px; overflow: hidden; }
+        
+        .pizza-manage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; overflow-y: auto; max-height: calc(100vh - 140px); padding-right: 5px; }
+        .manage-pizza-card { background: var(--white); padding: 12px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); display: flex; gap: 10px; align-items: center; }
+        .manage-pizza-card img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
+        .manage-info { flex: 1; }
+        .manage-info h4 { font-size: 0.9rem; margin-bottom: 2px; }
+        .manage-info input { width: 80px; padding: 4px; font-size: 0.85rem; border: 1px solid #dcdde1; border-radius: 4px; margin-top: 4px; }
+        .update-btn { background: var(--success); color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; font-weight: bold; margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+        if (!token || role !== 'admin') {
+            alert('Unauthorized Access! Admin login required.');
+            window.location.href = 'admin-login.html';
+        }
+    </script>
+
+    <div class="sidebar">
+        <div>
+            <div class="logo-area">🍕 SliceCraft</div>
+            <div class="nav-links">
+                <div class="nav-item active" id="navDash" onclick="switchAdminTab('dashboard')">📊 Dashboard</div>
+                <div class="nav-item" id="navPizzas" onclick="switchAdminTab('pizzas')">🍕 Manage Pizzas</div>
+                <div class="nav-item" id="navOrders" onclick="switchAdminTab('orders')">📦 Orders</div>
+                <div class="nav-item" id="navCustomers" onclick="switchAdminTab('customers')">👥 Customers</div>
+                <div class="nav-item" id="navInventory" onclick="switchAdminTab('inventory')">📦 Inventory Stock</div>
+            </div>
+        </div>
+        <button class="logout-sidebar-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar">
+            <div class="search-bar">
+                <span>🔍</span>
+                <input type="text" placeholder="Search orders, pizzas, or customers...">
+            </div>
+            <div class="admin-profile">
+                <span>🔔 3</span>
+                <span id="adminNameDisplay" style="color: var(--success);">👤 Admin</span>
+            </div>
+        </div>
+
+        <!-- 1. DASHBOARD VIEW -->
+        <div class="admin-view" id="dashboardView" style="display: flex;">
+            <div class="stats-row">
+                <div class="stat-card">
+                    <h4>Total Orders</h4>
+                    <div class="val" id="statOrders">0</div>
+                    <div class="trend">Live from Database</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Total Revenue</h4>
+                    <div class="val" id="statRevenue">₹0</div>
+                    <div class="trend">Live from Database</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Pizzas Sold</h4>
+                    <div class="val" id="statSold">0</div>
+                    <div class="trend">Live from Database</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Total Customers</h4>
+                    <div class="val" id="statCustomers">0</div>
+                    <div class="trend">Live from Database</div>
+                </div>
+            </div>
+
+            <div class="dash-grid">
+                <div class="dash-card">
+                    <h3>📈 Order Overview (Real Backend Analytics)</h3>
+                    <div style="flex: 1; display: flex; align-items: flex-end; justify-content: space-around; padding: 15px; background: #fafbfc; border-radius: 6px; border: 1px dashed #dfe4ea;" id="graphContainer">
+                    </div>
+                </div>
+
+                <div class="dash-card">
+                    <h3>⭐ Top Popular Pizzas</h3>
+                    <div style="display: flex; flex-direction: column; gap: 10px; overflow-y: auto;" id="topPizzasContainer">
+                        <p style="color: #747d8c; font-size: 0.85rem;">Loading popular pizzas...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. MANAGE PIZZAS VIEW -->
+        <div class="admin-view" id="pizzasView">
+            <h3 style="margin-bottom: 10px; color: var(--secondary);">🍕 Manage Pizzas & Prices</h3>
+            <div class="pizza-manage-grid" id="managePizzaContainer"></div>
+        </div>
+
+        <!-- 3. ORDERS VIEW -->
+        <div class="admin-view" id="ordersView">
+            <h3 style="margin-bottom: 10px; color: var(--secondary);">📦 Recent Customer Orders & Status Control</h3>
+            <div style="background: var(--white); border-radius: 8px; overflow-y: auto; max-height: calc(100vh - 140px); box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Pizza Name</th>
+                            <th>Amount</th>
+                            <th>Status Progression Control</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 4. CUSTOMERS VIEW -->
+        <div class="admin-view" id="customersView">
+            <h3 style="margin-bottom: 10px; color: var(--secondary);">👥 Registered Customers</h3>
+            <div style="background: var(--white); border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Full Name</th>
+                            <th>Email Address</th>
+                            <th>Role</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customersTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 5. INVENTORY STOCK VIEW -->
+        <div class="admin-view" id="inventoryView">
+            <h3 style="margin-bottom: 10px; color: var(--secondary);">📦 Inventory Stock & Management</h3>
+            <div style="background: var(--white); border-radius: 8px; overflow-y: auto; max-height: calc(100vh - 140px); box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item ID</th>
+                            <th>Ingredient Name</th>
+                            <th>Category</th>
+                            <th>Current Stock & Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        document.getElementById('adminNameDisplay').innerText = `👤 Admin: ${localStorage.getItem('name') || 'Admin'}`;
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'admin-login.html';
+        }
+
+        function switchAdminTab(tab) {
+            document.getElementById('dashboardView').style.display = 'none';
+            document.getElementById('pizzasView').style.display = 'none';
+            document.getElementById('ordersView').style.display = 'none';
+            document.getElementById('customersView').style.display = 'none';
+            document.getElementById('inventoryView').style.display = 'none';
+
+            document.getElementById('navDash').classList.remove('active');
+            document.getElementById('navPizzas').classList.remove('active');
+            document.getElementById('navOrders').classList.remove('active');
+            document.getElementById('navCustomers').classList.remove('active');
+            document.getElementById('navInventory').classList.remove('active');
+
+            if (tab === 'dashboard') {
+                document.getElementById('dashboardView').style.display = 'flex';
+                document.getElementById('navDash').classList.add('active');
+                loadAdminStats();
+            } else if (tab === 'pizzas') {
+                document.getElementById('pizzasView').style.display = 'flex';
+                document.getElementById('navPizzas').classList.add('active');
+                loadManagePizzas();
+            } else if (tab === 'orders') {
+                document.getElementById('ordersView').style.display = 'flex';
+                document.getElementById('navOrders').classList.add('active');
+                loadOrdersData();
+            } else if (tab === 'customers') {
+                document.getElementById('customersView').style.display = 'flex';
+                document.getElementById('navCustomers').classList.add('active');
+                loadCustomersData();
+            } else if (tab === 'inventory') {
+                document.getElementById('inventoryView').style.display = 'flex';
+                document.getElementById('navInventory').classList.add('active');
+                loadInventoryData();
+            }
+        }
+
+        async function loadAdminStats() {
+            try {
+                const res = await fetch(`${API_URL}/admin/stats`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('statOrders').innerText = data.totalOrders;
+                    document.getElementById('statRevenue').innerText = `₹${data.totalRevenue.toLocaleString()}`;
+                    document.getElementById('statSold').innerText = data.totalPizzasSold;
+                    document.getElementById('statCustomers').innerText = data.totalCustomers;
+
+                    const graphContainer = document.getElementById('graphContainer');
+                    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                    const maxVal = Math.max(...Object.values(data.dailySales), 5);
+
+                    graphContainer.innerHTML = days.map(day => {
+                        const count = data.dailySales[day] || 0;
+                        const heightPct = Math.round((count / maxVal) * 130) + 15;
+                        return `
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.7rem; color: #57606f; margin-bottom: 4px;">${count}</div>
+                                <div style="background: var(--primary); width: 25px; height: ${heightPct}px; border-radius: 4px 4px 0 0;"></div>
+                                <span style="font-size: 0.75rem; font-weight: bold; margin-top: 4px; display: block;">${day}</span>
+                            </div>
+                        `;
+                    }).join('');
+
+                    const topContainer = document.getElementById('topPizzasContainer');
+                    if (data.topPizzas.length === 0) {
+                        topContainer.innerHTML = '<p style="color: #747d8c; font-size: 0.85rem;">No pizza sales recorded yet.</p>';
+                    } else {
+                        topContainer.innerHTML = data.topPizzas.map(p => `
+                            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600;">
+                                <span>${p.name}</span>
+                                <span style="color: var(--primary);">${p.count} orders</span>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load admin stats:", err);
+            }
+        }
+
+        // Load Live Pizzas from Database with Stock Update Field
+        async function loadManagePizzas() {
+            const container = document.getElementById('managePizzaContainer');
+            container.innerHTML = '<p style="color: #747d8c;">Loading pizzas from database...</p>';
+            
+            const defaultPizzas = [
+                { name: 'Margherita Pizza', price: 199, stock: 50 },
+                { name: 'Pepperoni Pizza', price: 249, stock: 40 },
+                { name: 'Veggie Supreme', price: 229, stock: 45 },
+                { name: 'Chicken Tikka Pizza', price: 279, stock: 35 },
+                { name: 'Cheese Burst Pizza', price: 299, stock: 30 },
+                { name: 'Meat Lovers Pizza', price: 349, stock: 25 },
+                { name: 'Spicy Paneer Pizza', price: 259, stock: 40 },
+                { name: 'BBQ Chicken Pizza', price: 289, stock: 35 }
+            ];
+
+            const imageMap = {
+                'Margherita Pizza': 'Margherita.png',
+                'Pepperoni Pizza': 'pepperoni.png',
+                'Veggie Supreme': 'veggie.png',
+                'Chicken Tikka Pizza': 'tikka.png',
+                'Cheese Burst Pizza': 'chiz.png',
+                'Meat Lovers Pizza': 'meat.png',
+                'Spicy Paneer Pizza': 'spicy.png',
+                'BBQ Chicken Pizza': 'bbqchicken.png'
+            };
+
+            const renderGrid = (pizzas) => {
+                container.innerHTML = pizzas.map((p, idx) => {
+                    const imgFile = imageMap[p.name] || 'Margherita.png';
+                    const stockVal = p.stock !== undefined ? p.stock : 50;
+                    return `
+                        <div class="manage-pizza-card" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                            <div style="display: flex; gap: 10px; width: 100%; align-items: center;">
+                                <img src="${imgFile}" alt="${p.name}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px;">
+                                <div class="manage-info" style="flex: 1;">
+                                    <h4 style="font-size: 0.85rem; margin-bottom: 2px;">${p.name}</h4>
+                                    <span style="font-size: 0.75rem; color: #747d8c;">Price: ₹<span id="priceVal_${idx}">${p.price}</span></span>
+                                </div>
+                            </div>
+                            <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f2f6; pt-2; font-size: 0.75rem;">
+                                <div>
+                                    Price: <input type="number" id="priceInput_${idx}" value="${p.price}" style="width: 65px; padding: 3px; font-size: 0.8rem; border: 1px solid #dcdde1; border-radius: 4px;">
+                                </div>
+                                <div>
+                                    Stock: <input type="number" id="stockInput_${idx}" value="${stockVal}" style="width: 55px; padding: 3px; font-size: 0.8rem; border: 1px solid #dcdde1; border-radius: 4px;">
+                                </div>
+                                <button class="update-btn" onclick="updatePizzaDetails('${p.name}', ${idx})" style="background: var(--success); color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; font-weight: bold;">Update</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            };
+            
+            try {
+                const res = await fetch(`${API_URL}/pizzas`);
+                const pizzas = await res.json();
+                
+                if (res.ok && pizzas.length > 0) {
+                    renderGrid(pizzas);
+                } else {
+                    renderGrid(defaultPizzas);
+                }
+            } catch (err) {
+                console.warn("Using fallback local pizzas:", err);
+                renderGrid(defaultPizzas);
+            }
+        }
+
+        // Real Database Price & Stock Update Function
+        async function updatePizzaDetails(pizzaName, idx) {
+            const newPrice = Number(document.getElementById(`priceInput_${idx}`).value);
+            const newStock = Number(document.getElementById(`stockInput_${idx}`).value);
+            
+            try {
+                const res = await fetch(`${API_URL}/pizzas/price`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ name: pizzaName, price: newPrice, stock: newStock })
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    document.getElementById(`priceVal_${idx}`).innerText = newPrice;
+                    alert(`✅ ${pizzaName} details updated successfully! (Price: ₹${newPrice}, Stock: ${newStock})`);
+                    loadManagePizzas();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to update details'));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Server connection error during update!');
+            }
+        }
+
+        // Load Orders with Live Status Progression Dropdown
+        async function loadOrdersData() {
+            const ordTable = document.getElementById('ordersTableBody');
+            ordTable.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#747d8c;">Loading orders...</td></tr>`;
+            try {
+                const res = await fetch(`${API_URL}/orders`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const orders = await res.json();
+                if (res.ok) {
+                    if (orders.length === 0) {
+                        ordTable.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#747d8c;">No orders found</td></tr>`;
+                        return;
+                    }
+                    ordTable.innerHTML = orders.map(ord => `
+                        <tr>
+                            <td>#${ord._id.slice(-6)}</td>
+                            <td>${ord.customerName}</td>
+                            <td>${ord.pizzaDetails?.name || 'Custom Pizza'}</td>
+                            <td><strong>₹${ord.pizzaDetails?.price}</strong></td>
+                            <td>
+                                <select onchange="updateOrderStatus('${ord._id}', this.value)" style="padding: 5px; border-radius: 4px; font-weight: bold; border: 1px solid #dcdde1; background: #f8f9fa;">
+                                    <option value="Order Received" ${ord.status === 'Order Received' ? 'selected' : ''}>📦 Order Received</option>
+                                    <option value="In Kitchen" ${ord.status === 'In Kitchen' ? 'selected' : ''}>👨‍🍳 In Kitchen</option>
+                                    <option value="Sent to Delivery" ${ord.status === 'Sent to Delivery' ? 'selected' : ''}>🚀 Sent to Delivery</option>
+                                    <option value="Delivered" ${ord.status === 'Delivered' ? 'selected' : ''}>✅ Delivered</option>
+                                </select>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error(err);
+                ordTable.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">Failed to load orders</td></tr>`;
+            }
+        }
+
+        // Admin API to Update Order Status
+        async function updateOrderStatus(orderId, newStatus) {
+            try {
+                const res = await fetch(`${API_URL}/orders/status`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ orderId, status: newStatus })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(`✅ Order status updated to "${newStatus}" successfully!`);
+                    loadOrdersData();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to update status'));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Server connection error during status update!');
+            }
+        }
+
+        async function loadCustomersData() {
+            const custTable = document.getElementById('customersTableBody');
+            try {
+                const res = await fetch(`${API_URL}/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const users = await res.json();
+                if (res.ok) {
+                    if (users.length === 0) {
+                        custTable.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#747d8c;">No customers found</td></tr>`;
+                        return;
+                    }
+                    custTable.innerHTML = users.map(u => `
+                        <tr>
+                            <td>#${u._id.slice(-6)}</td>
+                            <td>${u.name}</td>
+                            <td>${u.email}</td>
+                            <td><span style="background:#e8f8f5; color:#2ecc71; padding:2px 6px; border-radius:4px; font-weight:bold;">${u.role}</span></td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Fetch & Render Inventory in Admin Panel
+        async function loadInventoryData() {
+            const invTable = document.getElementById('inventoryTableBody');
+            invTable.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#747d8c;">Loading inventory stock...</td></tr>`;
+            
+            try {
+                const res = await fetch(`${API_URL}/inventory`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    if (!data || data.length === 0) {
+                        invTable.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#747d8c;">No inventory items found</td></tr>`;
+                        return;
+                    }
+                    invTable.innerHTML = data.map((item, idx) => `
+                        <tr>
+                            <td>#${item._id.slice(-6)}</td>
+                            <td><strong>${item.itemName}</strong></td>
+                            <td><span style="text-transform: uppercase; font-size: 0.75rem; background: #dfe4ea; padding: 2px 6px; border-radius: 4px;">${item.category}</span></td>
+                            <td>
+                                <input type="number" id="stockInput_${idx}" value="${item.stock}" style="width: 70px; padding: 4px; border: 1px solid #dcdde1; border-radius: 4px;">
+                                <button onclick="updateStock('${item._id}', ${idx})" style="background: var(--success); color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 6px;">Update</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    invTable.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">Error: ${data.error || 'Failed to load inventory'}</td></tr>`;
+                }
+            } catch (err) {
+                console.error(err);
+                invTable.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">Server connection error. Please re-login as admin.</td></tr>`;
+            }
+        }
+
+        // Manual Stock Update API call
+        async function updateStock(itemId, idx) {
+            const newStock = document.getElementById(`stockInput_${idx}`).value;
+            try {
+                const res = await fetch(`${API_URL}/inventory/update`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ itemId, stock: newStock })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(`✅ Stock updated successfully to ${newStock} units!`);
+                    loadInventoryData();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to update stock'));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Server connection error during stock update!');
+            }
+        }
+
+        // Initial Load
+        loadAdminStats();
+    </script>
+</body>
+</html>

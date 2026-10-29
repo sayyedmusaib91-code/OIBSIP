@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SliceCraft | Secure Admin Portal</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { 
+            display: flex; 
+            justify-content: center;
+            align-items: center;
+            height: 100vh; 
+            background-color: #1e272e; 
+            overflow: hidden;
+        }
+
+        /* Fullscreen Laptop Mockup Background Wrapper */
+        .laptop-bg-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: url('62350.png') no-repeat center center;
+            background-size: 100% 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Transparent Admin Popup placed exactly over the laptop's right white screen */
+        .form-overlay-box {
+            position: absolute;
+            width: 38%; 
+            height: 72%;
+            right: 9.5%;
+            top: 13.5%;
+            background: transparent;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-box { width: 100%; max-width: 360px; margin: 0 auto; background: rgba(255, 255, 255, 0.95); padding: 25px 30px; border-radius: 8px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); }
+        .form-box h2 { font-size: 1.6rem; color: #2f3542; margin-bottom: 4px; font-weight: 700; text-align: center; }
+        .form-box p.subtitle { color: #57606f; margin-bottom: 20px; font-size: 0.8rem; text-align: center; }
+
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-weight: 600; margin-bottom: 4px; color: #2f3542; font-size: 0.8rem; }
+        
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced6e0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+            background: #ffffff;
+            transition: 0.2s;
+        }
+
+        input:focus { border-color: #ff4757; box-shadow: 0 0 0 3px rgba(255,71,87,0.2); }
+
+        .btn-submit {
+            background: #ff4757;
+            color: #ffffff;
+            border: none;
+            padding: 11px;
+            width: 100%;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(255,71,87,0.3);
+            margin-top: 5px;
+        }
+
+        .btn-submit:hover { background: #ff3838; }
+
+        .toggle-link, .back-link {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.8rem;
+        }
+        .toggle-link span { color: #ff4757; font-weight: bold; cursor: pointer; text-decoration: underline; }
+        .back-link a { color: #57606f; text-decoration: none; font-weight: bold; }
+        .back-link a:hover { color: #ff4757; text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="laptop-bg-container">
+        <div class="form-overlay-box">
+            <div class="form-box">
+                
+                <!-- Admin Login View -->
+                <div id="adminLoginView">
+                    <h2>🔒 Admin Portal</h2>
+                    <p class="subtitle">Secure management dashboard login</p>
+                    
+                    <form id="adminLoginForm">
+                        <div class="form-group">
+                            <label>Admin Email:</label>
+                            <input type="email" id="adminEmail" placeholder="admin@slicecraft.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password:</label>
+                            <input type="password" id="adminPassword" placeholder="••••••••" required>
+                        </div>
+                        <button type="submit" class="btn-submit">Login to Dashboard →</button>
+                    </form>
+
+                    <div class="toggle-link">
+                        Need an admin account? <span onclick="toggleAdminAuth()">Sign Up</span>
+                    </div>
+                    <div class="back-link">
+                        <a href="login.html">← Back to User Login</a>
+                    </div>
+                </div>
+
+                <!-- Admin Register View -->
+                <div id="adminRegisterView" style="display: none;">
+                    <h2>📝 Admin Signup</h2>
+                    <p class="subtitle">Register a new admin account</p>
+                    
+                    <form id="adminRegisterForm">
+                        <div class="form-group">
+                            <label>Full Name:</label>
+                            <input type="text" id="regAdminName" placeholder="Admin Name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Admin Email:</label>
+                            <input type="email" id="regAdminEmail" placeholder="admin@slicecraft.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password:</label>
+                            <input type="password" id="regAdminPassword" placeholder="••••••••" required>
+                        </div>
+                        <button type="submit" class="btn-submit">Register Admin →</button>
+                    </form>
+
+                    <div class="toggle-link">
+                        Already have an admin account? <span onclick="toggleAdminAuth()">Log In</span>
+                    </div>
+                    <div class="back-link">
+                        <a href="login.html">← Back to User Login</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        function toggleAdminAuth() {
+            const loginView = document.getElementById('adminLoginView');
+            const registerView = document.getElementById('adminRegisterView');
+            if (loginView.style.display === 'none') {
+                loginView.style.display = 'block';
+                registerView.style.display = 'none';
+            } else {
+                loginView.style.display = 'none';
+                registerView.style.display = 'block';
+            }
+        }
+
+        // Admin Register Handler
+        document.getElementById('adminRegisterForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch(`${API_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: document.getElementById('regAdminName').value,
+                    email: document.getElementById('regAdminEmail').value,
+                    password: document.getElementById('regAdminPassword').value,
+                    role: 'admin' // Explicitly set role as admin
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert('Admin registration successful! Please login.');
+                toggleAdminAuth();
+            } else {
+                alert(data.error || 'Admin registration failed');
+            }
+        });
+
+        // Admin Login Handler
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const res = await fetch(`${API_URL}/auth/admin-login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: document.getElementById('adminEmail').value,
+                    password: document.getElementById('adminPassword').value
+                })
+            });
+
+            const data = await res.json();
+            
+            if (res.ok) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('name', data.name);
+                localStorage.setItem('role', data.role);
+                alert('Admin Login Successful!');
+                window.location.href = 'admin.html';
+            } else {
+                alert(data.error || 'Admin login failed');
+            }
+        });
+    </script>
+</body>
+</html>
