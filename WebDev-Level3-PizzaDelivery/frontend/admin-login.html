@@ -86,6 +86,17 @@
         .toggle-link span { color: #ff4757; font-weight: bold; cursor: pointer; text-decoration: underline; }
         .back-link a { color: #57606f; text-decoration: none; font-weight: bold; }
         .back-link a:hover { color: #ff4757; text-decoration: underline; }
+
+        .msg-box {
+            font-size: 0.8rem;
+            text-align: center;
+            margin-bottom: 10px;
+            padding: 6px;
+            border-radius: 4px;
+            display: none;
+        }
+        .msg-error { background: #ffeaa7; color: #d63031; }
+        .msg-success { background: #d4edda; color: #155724; }
     </style>
 </head>
 <body>
@@ -98,6 +109,7 @@
                 <div id="adminLoginView">
                     <h2>🔒 Admin Portal</h2>
                     <p class="subtitle">Secure management dashboard login</p>
+                    <div id="loginMsg" class="msg-box"></div>
                     
                     <form id="adminLoginForm">
                         <div class="form-group">
@@ -115,7 +127,7 @@
                         Need an admin account? <span onclick="toggleAdminAuth()">Sign Up</span>
                     </div>
                     <div class="back-link">
-                        <a href="login.html">← Back to User Login</a>
+                        <a href="/">← Back to User Login</a>
                     </div>
                 </div>
 
@@ -123,6 +135,7 @@
                 <div id="adminRegisterView" style="display: none;">
                     <h2>📝 Admin Signup</h2>
                     <p class="subtitle">Register a new admin account</p>
+                    <div id="registerMsg" class="msg-box"></div>
                     
                     <form id="adminRegisterForm">
                         <div class="form-group">
@@ -144,7 +157,7 @@
                         Already have an admin account? <span onclick="toggleAdminAuth()">Log In</span>
                     </div>
                     <div class="back-link">
-                        <a href="login.html">← Back to User Login</a>
+                        <a href="/">← Back to User Login</a>
                     </div>
                 </div>
 
@@ -153,11 +166,23 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:5000/api';
+        // Smart API URL determination for Localhost & Production (Render)
+        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:5000/api' 
+            : '/api';
+
+        function showMsg(elementId, text, isError = true) {
+            const el = document.getElementById(elementId);
+            el.textContent = text;
+            el.className = `msg-box ${isError ? 'msg-error' : 'msg-success'}`;
+            el.style.display = 'block';
+        }
 
         function toggleAdminAuth() {
             const loginView = document.getElementById('adminLoginView');
             const registerView = document.getElementById('adminRegisterView');
+            document.getElementById('loginMsg').style.display = 'none';
+            document.getElementById('registerMsg').style.display = 'none';
             if (loginView.style.display === 'none') {
                 loginView.style.display = 'block';
                 registerView.style.display = 'none';
@@ -170,48 +195,55 @@
         // Admin Register Handler
         document.getElementById('adminRegisterForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const res = await fetch(`${API_URL}/auth/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: document.getElementById('regAdminName').value,
-                    email: document.getElementById('regAdminEmail').value,
-                    password: document.getElementById('regAdminPassword').value,
-                    role: 'admin' // Explicitly set role as admin
-                })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                alert('Admin registration successful! Please login.');
-                toggleAdminAuth();
-            } else {
-                alert(data.error || 'Admin registration failed');
+            try {
+                const res = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: document.getElementById('regAdminName').value,
+                        email: document.getElementById('regAdminEmail').value,
+                        password: document.getElementById('regAdminPassword').value,
+                        role: 'admin'
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showMsg('registerMsg', 'Registration successful! Please login.', false);
+                    setTimeout(() => toggleAdminAuth(), 1200);
+                } else {
+                    showMsg('registerMsg', data.error || 'Admin registration failed');
+                }
+            } catch (err) {
+                showMsg('registerMsg', 'Network error. Please try again.');
             }
         });
 
         // Admin Login Handler
         document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const res = await fetch(`${API_URL}/auth/admin-login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email: document.getElementById('adminEmail').value,
-                    password: document.getElementById('adminPassword').value
-                })
-            });
+            try {
+                const res = await fetch(`${API_URL}/auth/admin-login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: document.getElementById('adminEmail').value,
+                        password: document.getElementById('adminPassword').value
+                    })
+                });
 
-            const data = await res.json();
-            
-            if (res.ok) {
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('name', data.name);
-                localStorage.setItem('role', data.role);
-                alert('Admin Login Successful!');
-                window.location.href = 'admin.html';
-            } else {
-                alert(data.error || 'Admin login failed');
+                const data = await res.json();
+                
+                if (res.ok) {
+                    localStorage.setItem('adminToken', data.token);
+                    localStorage.setItem('name', data.name);
+                    localStorage.setItem('role', data.role || 'admin');
+                    // Silent smooth redirect without popups
+                    window.location.replace('/admin');
+                } else {
+                    showMsg('loginMsg', data.error || 'Admin login failed');
+                }
+            } catch (err) {
+                showMsg('loginMsg', 'Network error. Please try again.');
             }
         });
     </script>

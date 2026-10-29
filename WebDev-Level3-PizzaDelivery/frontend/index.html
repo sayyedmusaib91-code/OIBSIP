@@ -174,7 +174,7 @@
         .summary-pizza-img { width: 100%; height: 95px; border-radius: 6px; object-fit: cover; }
         .address-box { background: white; border: 1px solid #dfe4ea; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
 
-        /* --- New Professional Profile Styling (Matching reference image) --- */
+        /* Professional Profile Styling */
         .profile-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; padding: 10px 0; overflow-y: auto; max-height: calc(100vh - 100px); }
         .profile-left-card { background: #fafbfc; border: 1px solid #e1e2e6; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
         .profile-avatar-area { display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #dfe4ea; padding-bottom: 15px; }
@@ -202,16 +202,27 @@
         .profile-group { margin-bottom: 12px; }
         .profile-group label { font-size: 0.8rem; color: var(--secondary); display: block; margin-bottom: 4px; font-weight: bold; }
         .profile-group input { width: 100%; padding: 8px 10px; border: 1px solid #dcdde1; border-radius: 6px; font-size: 0.9rem; outline: none; }
+
+        /* Custom Pizza Builder Modal */
+        .builder-step { display: none; flex-direction: column; gap: 10px; }
+        .builder-step.active { display: flex; }
+        .option-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-height: 220px; overflow-y: auto; }
+        .option-card { background: #f8f9fa; border: 1px solid #dfe4ea; border-radius: 6px; padding: 10px; font-size: 0.8rem; font-weight: 600; cursor: pointer; text-align: center; transition: 0.2s; }
+        .option-card:hover { border-color: var(--primary); }
+        .option-card.selected { background: #fff5f5; border-color: var(--primary); color: var(--primary); }
+        .builder-footer { display: flex; justify-content: space-between; margin-top: 10px; }
+        .builder-btn { padding: 8px 15px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; border: none; cursor: pointer; }
+        .btn-prev { background: #dfe4ea; color: var(--secondary); }
+        .btn-next { background: var(--primary); color: white; }
     </style>
 </head>
 <body>
 
-    <!-- Strict Auth Guard -->
+    <!-- Silent Auth Guard: Redirect immediately without alert popup if unauthorized -->
     <script>
         const token = localStorage.getItem('token');
         if (!token) {
-            alert('Access Denied! Please login first.');
-            window.location.href = 'login.html';
+            window.location.replace('/');
         }
     </script>
 
@@ -242,7 +253,7 @@
             </div>
         </div>
 
-        <!-- Dashboard Body Container (Home Catalog) -->
+        <!-- Dashboard Body Content (Home Catalog) -->
         <div class="dashboard-body" id="homeView">
             <div class="inline-msg" id="homeInlineMsg"></div>
             <div class="hero-banner">
@@ -268,7 +279,7 @@
             </div>
         </div>
 
-        <!-- Profile View (Professional Layout Matching Reference Image) -->
+        <!-- Profile View -->
         <div class="content-view" id="myProfileView">
             <h2 style="color: var(--secondary); font-size: 1.1rem; border-bottom: 1px solid #dfe4ea; padding-bottom: 6px;">👤 My Profile</h2>
             <p style="font-size: 0.75rem; color: #747d8c; margin-bottom: 5px;">Manage your account details and preferences</p>
@@ -311,7 +322,6 @@
 
                 <!-- Right Profile Details Card -->
                 <div class="profile-right-card">
-                    <!-- Personal Info Box -->
                     <div class="info-box">
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dfe4ea; padding-bottom: 8px;">
                             <h4 style="font-size: 0.9rem; color: var(--secondary);">👤 Personal Information</h4>
@@ -324,7 +334,6 @@
                         <div class="info-row"><span>Date of Birth</span><span>05 May 2007</span></div>
                     </div>
 
-                    <!-- Delivery Addresses Box -->
                     <div class="info-box">
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dfe4ea; padding-bottom: 8px;">
                             <h4 style="font-size: 0.9rem; color: var(--secondary);">📍 Delivery Addresses</h4>
@@ -339,7 +348,6 @@
                         </div>
                     </div>
 
-                    <!-- Logout Button Box -->
                     <div class="logout-box" onclick="logout()">
                         <div>
                             <h5 style="font-size: 0.85rem; color: var(--primary);">🚪 Log Out</h5>
@@ -389,7 +397,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="builderTitle">Step 1: Choose Pizza Base</h3>
-                <span class="close-modal" onclick="closeBuilder()">&times;</span>
+                <span class="close-modal" onclick="closeBuilder()" style="cursor: pointer; font-size: 1.2rem; font-weight: bold;">&times;</span>
             </div>
 
             <div class="builder-step active" id="step1">
@@ -449,7 +457,10 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:5000/api';
+        // Smart API URL determination for Localhost & Production (Render)
+        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:5000/api' 
+            : '/api';
 
         // Load profile data into DOM
         function loadProfileData() {
@@ -512,7 +523,7 @@
 
         function logout() {
             localStorage.clear();
-            window.location.href = 'login.html';
+            window.location.replace('/');
         }
 
         function switchTab(tab) {
@@ -730,7 +741,6 @@
 
         async function fetchUserOrders() {
             const container = document.getElementById('myOrdersContainer');
-            const authToken = localStorage.getItem('token');
             container.innerHTML = '<p style="color: #747d8c;">Loading your orders...</p>';
             
             try {
@@ -738,7 +748,7 @@
                     method: 'GET',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}` 
+                        'Authorization': `Bearer ${token}` 
                     }
                 });
                 const data = await res.json();
@@ -897,13 +907,6 @@
         }
 
         async function orderPizza(pizzaName, price, customDetails = null) {
-            const authToken = localStorage.getItem('token');
-            if (!authToken) {
-                showInlineMessage('homeInlineMsg', 'Access Denied! Please login first.', false);
-                setTimeout(() => window.location.href = 'login.html', 1500);
-                return;
-            }
-
             const customerName = localStorage.getItem('name') || 'Musaib';
             const phone = localStorage.getItem('phone') || '+91 98765 43210';
             const address = localStorage.getItem('address') || 'Vambori, Ahmednagar';
@@ -948,7 +951,7 @@
                                 method: 'POST',
                                 headers: { 
                                     'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${authToken}`
+                                    'Authorization': `Bearer ${token}`
                                 },
                                 body: JSON.stringify(orderData)
                             });

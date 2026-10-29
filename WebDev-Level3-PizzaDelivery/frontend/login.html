@@ -45,17 +45,17 @@
 
         .form-box { width: 100%; max-width: 360px; margin: 0 auto; }
         .form-box h2 { font-size: 2rem; color: #2f3542; margin-bottom: 6px; font-weight: 700; text-align: center; }
-        .form-box p.subtitle { color: #57606f; margin-bottom: 25px; font-size: 0.9rem; text-align: center; }
+        .form-box p.subtitle { color: #57606f; margin-bottom: 20px; font-size: 0.9rem; text-align: center; }
 
-        .form-group { margin-bottom: 18px; position: relative; }
-        label { display: block; font-weight: 600; margin-bottom: 6px; color: #2f3542; font-size: 0.85rem; }
+        .form-group { margin-bottom: 14px; position: relative; }
+        label { display: block; font-weight: 600; margin-bottom: 4px; color: #2f3542; font-size: 0.85rem; }
         
         input {
             width: 100%;
-            padding: 12px 14px;
+            padding: 10px 12px;
             border: 1px solid rgba(205, 214, 224, 0.9);
             border-radius: 6px;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             outline: none;
             background: rgba(255, 255, 255, 0.9);
             transition: 0.2s;
@@ -64,12 +64,8 @@
         input:focus { border-color: #ff4757; background: #fff; box-shadow: 0 0 0 3px rgba(255,71,87,0.2); }
 
         /* Password Eye Toggle Button Styling */
-        .password-wrapper {
-            position: relative;
-        }
-        .password-wrapper input {
-            padding-right: 40px;
-        }
+        .password-wrapper { position: relative; }
+        .password-wrapper input { padding-right: 40px; }
         .eye-icon {
             position: absolute;
             right: 12px;
@@ -85,46 +81,46 @@
             display: flex;
             justify-content: flex-end;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             font-size: 0.8rem;
         }
-
-        .form-options span {
-            color: #ff4757;
-            cursor: pointer;
-            font-weight: 600;
-        }
+        .form-options span { color: #ff4757; cursor: pointer; font-weight: 600; }
         .form-options span:hover { text-decoration: underline; }
 
         .btn-submit {
             background: #ff4757;
             color: #ffffff;
             border: none;
-            padding: 12px;
+            padding: 11px;
             width: 100%;
             border-radius: 6px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
-            box-shadow: 0 4px 12px rgba(255,71,87,0.3);
+            box-shadow: 0 4px 10px rgba(255,71,87,0.3);
         }
-
         .btn-submit:hover { background: #ff3838; }
 
         .toggle-link {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 15px;
             font-size: 0.85rem;
             color: #2f3542;
         }
+        .toggle-link span { color: #ff4757; font-weight: bold; cursor: pointer; text-decoration: underline; }
 
-        .toggle-link span {
-            color: #ff4757;
-            font-weight: bold;
-            cursor: pointer;
-            text-decoration: underline;
+        /* Inline Message Banners */
+        .msg-box {
+            font-size: 0.8rem;
+            text-align: center;
+            margin-bottom: 10px;
+            padding: 6px;
+            border-radius: 4px;
+            display: none;
         }
+        .msg-error { background: #ffeaa7; color: #d63031; }
+        .msg-success { background: #d4edda; color: #155724; }
     </style>
 </head>
 <body>
@@ -137,6 +133,7 @@
                 <div id="loginBox">
                     <h2>Welcome Back!</h2>
                     <p class="subtitle">Log in to your Pizza account</p>
+                    <div id="loginMsg" class="msg-box"></div>
                     
                     <form id="loginForm">
                         <div class="form-group">
@@ -167,6 +164,7 @@
                 <div id="registerBox" style="display: none;">
                     <h2>Create Account</h2>
                     <p class="subtitle">Sign up to start ordering custom pizzas</p>
+                    <div id="registerMsg" class="msg-box"></div>
                     
                     <form id="registerForm">
                         <div class="form-group">
@@ -197,6 +195,7 @@
                 <div id="forgotBox" style="display: none;">
                     <h2>Reset Password</h2>
                     <p class="subtitle">Enter your registered email to reset password</p>
+                    <div id="forgotMsg" class="msg-box"></div>
                     
                     <form id="forgotForm">
                         <div class="form-group">
@@ -228,12 +227,26 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:5000/api';
+        // Smart API URL determination for Localhost & Production (Render)
+        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:5000/api' 
+            : '/api';
+
+        function showMsg(elementId, text, isError = true) {
+            const el = document.getElementById(elementId);
+            el.textContent = text;
+            el.className = `msg-box ${isError ? 'msg-error' : 'msg-success'}`;
+            el.style.display = 'block';
+        }
 
         function toggleAuth(view) {
             const loginBox = document.getElementById('loginBox');
             const registerBox = document.getElementById('registerBox');
             const forgotBox = document.getElementById('forgotBox');
+
+            document.getElementById('loginMsg').style.display = 'none';
+            document.getElementById('registerMsg').style.display = 'none';
+            document.getElementById('forgotMsg').style.display = 'none';
 
             loginBox.style.display = 'none';
             registerBox.style.display = 'none';
@@ -281,18 +294,18 @@
                     });
                     const data = await res.json();
                     if (res.ok) {
-                        alert('✅ ' + data.message);
+                        showMsg('forgotMsg', data.message, false);
                         document.getElementById('resetToken').value = data.resetToken;
                         document.getElementById('tokenGroup').style.display = 'block';
                         document.getElementById('newPassGroup').style.display = 'block';
                         document.getElementById('forgotBtn').innerText = 'Update Password →';
                         isTokenGenerated = true;
                     } else {
-                        alert(data.error || 'Failed to generate reset token');
+                        showMsg('forgotMsg', data.error || 'Failed to generate reset token');
                     }
                 } catch (err) {
                     console.error(err);
-                    alert('Server connection error!');
+                    showMsg('forgotMsg', 'Server connection error!');
                 }
             } else {
                 const token = document.getElementById('resetToken').value;
@@ -305,15 +318,15 @@
                     });
                     const data = await res.json();
                     if (res.ok) {
-                        alert('🎉 ' + data.message);
+                        showMsg('forgotMsg', data.message, false);
                         isTokenGenerated = false;
-                        toggleAuth('login');
+                        setTimeout(() => toggleAuth('login'), 1500);
                     } else {
-                        alert(data.error || 'Password reset failed');
+                        showMsg('forgotMsg', data.error || 'Password reset failed');
                     }
                 } catch (err) {
                     console.error(err);
-                    alert('Server connection error!');
+                    showMsg('forgotMsg', 'Server connection error!');
                 }
             }
         });
@@ -334,14 +347,14 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    alert('Registration successful! Please login.');
-                    toggleAuth('login');
+                    showMsg('registerMsg', 'Registration successful! Please login.', false);
+                    setTimeout(() => toggleAuth('login'), 1200);
                 } else {
-                    alert(data.error || 'Registration failed');
+                    showMsg('registerMsg', data.error || 'Registration failed');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Server connection error during registration!');
+                showMsg('registerMsg', 'Server connection error during registration!');
             }
         });
 
@@ -362,14 +375,14 @@
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('name', data.name);
                     localStorage.setItem('role', data.role);
-                    alert('Login Successful!');
-                    window.location.href = 'index.html';
+                    // Silent smooth redirect without popups
+                    window.location.replace('/dashboard');
                 } else {
-                    alert(data.error || 'Login failed');
+                    showMsg('loginMsg', data.error || 'Login failed');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Server connection error during login!');
+                showMsg('loginMsg', 'Server connection error during login!');
             }
         });
     </script>

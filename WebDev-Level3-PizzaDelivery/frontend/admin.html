@@ -108,11 +108,11 @@
 <body>
 
     <script>
-        const token = localStorage.getItem('token');
+        // Silent Auth Guard: Redirect immediately without alert popup if unauthorized
+        const adminToken = localStorage.getItem('adminToken');
         const role = localStorage.getItem('role');
-        if (!token || role !== 'admin') {
-            alert('Unauthorized Access! Admin login required.');
-            window.location.href = 'admin-login.html';
+        if (!adminToken || role !== 'admin') {
+            window.location.replace('/admin-login');
         }
     </script>
 
@@ -246,12 +246,16 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:5000/api';
+        // Smart API URL determination for Localhost & Production (Render)
+        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:5000/api' 
+            : '/api';
+
         document.getElementById('adminNameDisplay').innerText = `👤 Admin: ${localStorage.getItem('name') || 'Admin'}`;
 
         function logout() {
             localStorage.clear();
-            window.location.href = 'admin-login.html';
+            window.location.replace('/admin-login');
         }
 
         function switchAdminTab(tab) {
@@ -293,7 +297,7 @@
         async function loadAdminStats() {
             try {
                 const res = await fetch(`${API_URL}/admin/stats`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
                 });
                 const data = await res.json();
                 if (res.ok) {
@@ -335,7 +339,6 @@
             }
         }
 
-        // Load Live Pizzas from Database with Stock Update Field
         async function loadManagePizzas() {
             const container = document.getElementById('managePizzaContainer');
             container.innerHTML = '<p style="color: #747d8c;">Loading pizzas from database...</p>';
@@ -375,14 +378,14 @@
                                     <span style="font-size: 0.75rem; color: #747d8c;">Price: ₹<span id="priceVal_${idx}">${p.price}</span></span>
                                 </div>
                             </div>
-                            <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f2f6; pt-2; font-size: 0.75rem;">
+                            <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f2f6; padding-top: 4px; font-size: 0.75rem;">
                                 <div>
                                     Price: <input type="number" id="priceInput_${idx}" value="${p.price}" style="width: 65px; padding: 3px; font-size: 0.8rem; border: 1px solid #dcdde1; border-radius: 4px;">
                                 </div>
                                 <div>
                                     Stock: <input type="number" id="stockInput_${idx}" value="${stockVal}" style="width: 55px; padding: 3px; font-size: 0.8rem; border: 1px solid #dcdde1; border-radius: 4px;">
                                 </div>
-                                <button class="update-btn" onclick="updatePizzaDetails('${p.name}', ${idx})" style="background: var(--success); color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; font-weight: bold;">Update</button>
+                                <button class="update-btn" onclick="updatePizzaDetails('${p.name}', ${idx})">Update</button>
                             </div>
                         </div>
                     `;
@@ -404,7 +407,6 @@
             }
         }
 
-        // Real Database Price & Stock Update Function
         async function updatePizzaDetails(pizzaName, idx) {
             const newPrice = Number(document.getElementById(`priceInput_${idx}`).value);
             const newStock = Number(document.getElementById(`stockInput_${idx}`).value);
@@ -414,7 +416,7 @@
                     method: 'PUT',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}` 
+                        'Authorization': `Bearer ${adminToken}` 
                     },
                     body: JSON.stringify({ name: pizzaName, price: newPrice, stock: newStock })
                 });
@@ -422,24 +424,21 @@
                 
                 if (res.ok) {
                     document.getElementById(`priceVal_${idx}`).innerText = newPrice;
-                    alert(`✅ ${pizzaName} details updated successfully! (Price: ₹${newPrice}, Stock: ${newStock})`);
                     loadManagePizzas();
                 } else {
-                    alert('Error: ' + (data.error || 'Failed to update details'));
+                    console.error(data.error || 'Failed to update details');
                 }
             } catch (err) {
-                console.error(err);
-                alert('Server connection error during update!');
+                console.error("Server connection error during update!");
             }
         }
 
-        // Load Orders with Live Status Progression Dropdown
         async function loadOrdersData() {
             const ordTable = document.getElementById('ordersTableBody');
             ordTable.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#747d8c;">Loading orders...</td></tr>`;
             try {
                 const res = await fetch(`${API_URL}/orders`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
                 });
                 const orders = await res.json();
                 if (res.ok) {
@@ -470,27 +469,24 @@
             }
         }
 
-        // Admin API to Update Order Status
         async function updateOrderStatus(orderId, newStatus) {
             try {
                 const res = await fetch(`${API_URL}/orders/status`, {
                     method: 'PUT',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}` 
+                        'Authorization': `Bearer ${adminToken}` 
                     },
                     body: JSON.stringify({ orderId, status: newStatus })
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    alert(`✅ Order status updated to "${newStatus}" successfully!`);
                     loadOrdersData();
                 } else {
-                    alert('Error: ' + (data.error || 'Failed to update status'));
+                    console.error(data.error || 'Failed to update status');
                 }
             } catch (err) {
-                console.error(err);
-                alert('Server connection error during status update!');
+                console.error("Server connection error during status update!");
             }
         }
 
@@ -498,7 +494,7 @@
             const custTable = document.getElementById('customersTableBody');
             try {
                 const res = await fetch(`${API_URL}/users`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
                 });
                 const users = await res.json();
                 if (res.ok) {
@@ -520,14 +516,13 @@
             }
         }
 
-        // Fetch & Render Inventory in Admin Panel
         async function loadInventoryData() {
             const invTable = document.getElementById('inventoryTableBody');
             invTable.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#747d8c;">Loading inventory stock...</td></tr>`;
             
             try {
                 const res = await fetch(`${API_URL}/inventory`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
                 });
                 const data = await res.json();
                 
@@ -556,7 +551,6 @@
             }
         }
 
-        // Manual Stock Update API call
         async function updateStock(itemId, idx) {
             const newStock = document.getElementById(`stockInput_${idx}`).value;
             try {
@@ -564,20 +558,18 @@
                     method: 'PUT',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}` 
+                        'Authorization': `Bearer ${adminToken}` 
                     },
                     body: JSON.stringify({ itemId, stock: newStock })
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    alert(`✅ Stock updated successfully to ${newStock} units!`);
                     loadInventoryData();
                 } else {
-                    alert('Error: ' + (data.error || 'Failed to update stock'));
+                    console.error(data.error || 'Failed to update stock');
                 }
             } catch (err) {
-                console.error(err);
-                alert('Server connection error during stock update!');
+                console.error("Server connection error during stock update!");
             }
         }
 

@@ -19,12 +19,36 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors());
+
+// Serve Frontend Static Files
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// Use Routes
+// Use API Routes
 app.use('/api', pizzaRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api', paymentRoutes);
+
+// --- FRONTEND MULTI-PAGE ROUTING ---
+
+// 1. Root Route: Link khulte hi sabse pehle login.html khulna chahiye
+app.get('/', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../frontend', 'login.html'));
+});
+
+// 2. User Dashboard (index.html)
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../frontend', 'index.html'));
+});
+
+// 3. Admin Dashboard
+app.get('/admin', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../frontend', 'admin.html'));
+});
+
+// 4. Admin Login Page
+app.get('/admin-login', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../frontend', 'admin-login.html'));
+});
 
 // Test Route / API Health Check
 app.get('/api/health', (req, res) => {
