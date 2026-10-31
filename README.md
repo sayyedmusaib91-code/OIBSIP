@@ -14,7 +14,7 @@ SliceCraft is a feature-rich and modern full-stack pizza delivery web applicatio
 
 ### 1. User Login & Authentication
 > *Secure user login and registration portal with clean UI.*
-> ![User Login]<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/65a0e73d-663a-4680-a9af-5bd21e7c26d6" />
+> <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/65a0e73d-663a-4680-a9af-5bd21e7c26d6" />
 
 
 ### 2. User Dashboard & Custom Pizza Builder
